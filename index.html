@@ -1,0 +1,77 @@
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="chrome=1">
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+        <title>OpenSensorHub WebClientToolkit Demo</title>
+        <style>
+            body {
+                margin: 0 !important
+            }
+            #container {
+                /* height: calc(100% - 15px); */
+                height: 100%;
+                overflow: hidden;
+                background-color: black;
+            }
+
+            #left {
+                flex-direction: column;
+                /* width:calc(75% - 50px); */
+                width:75%;
+                float:left;
+                height:100%;
+            }
+
+            #right {
+                flex-direction: column;
+                /* width:calc(25% - 50px); */
+                width:25%;
+                float:left;
+                height:100%;
+            }
+
+            div.video-h264 {
+                width: auto;
+                /* padding: 8px; */
+                /* border: 1px solid #dee2e6; */
+                overflow: hidden;
+                /* height:calc(50% - 40px); */
+                height:30%;
+            }
+
+            div.video-h264 canvas {
+                width: 100%;
+            }
+
+            div.title {
+                text-align: center;
+                color: white;
+                font-family: sans-serif;
+           }
+
+            div.alt-chart-window {
+                width: auto;
+                /* padding: 8px; */
+                /* border: 1px solid #dee2e6; */
+                overflow: hidden;
+                /* height:calc(50% - 40px); */
+                height:30%;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="left">
+                <div id="cesium-container"></div>
+            </div>
+            <div id="right">
+                <div class="title">UAV Video Stream</div>
+                <div id="video-window"></div>
+                <div class="title">UAV</div>
+                <div class="alt-chart-window" id="alt-chart-window"></div>
+            </div>
+        </div>
+    </body>
+</html>
