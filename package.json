@@ -1,6 +1,6 @@
 {
   "name": "osh-cliend-dev-template",
-  "version": "1.o.0",
+  "version": "1.0.0",
   "description": "OSH Client Development Template",
   "main": "main.js",
   "repository": {
