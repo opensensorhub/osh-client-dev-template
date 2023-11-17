@@ -1,4 +1,0 @@
-[submodule "osh-js"]
-	path = osh-js
-	url = https://github.com/opensensorhub/osh-js.git
-	branch = dev

@@ -39,9 +39,9 @@ module.exports = {
         modules: [
             path.resolve(__dirname, 'node_modules'),
         ],
-        alias: {
-            'osh-js': path.resolve(__dirname, 'osh-js')
-        }
+        // alias: {
+        //     'osh-js': path.resolve(__dirname, 'osh-js')
+        // }
     },
     // These rules tell Webpack how to process different module types.
     // Remember, *everything* is a module in Webpack. That includes

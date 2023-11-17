@@ -80,6 +80,7 @@
     "wnumb": "1.2.0",
     "chart.js": "3.5.1",
     "chartjs-adapter-moment": "1.0.0",
-    "moment": "2.29.1"
+    "moment": "2.29.1",
+    "osh-js": "git+https@github.com:opensensorhub/osh-js.git#416f8ee"
   }
 }

@@ -1,4 +1,4 @@
-import CesiumView from './osh-js/source/core/ui/view/map/CesiumView.js';
+import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView.js';
 import {
     Cartesian3,
     CesiumTerrainProvider,
@@ -8,14 +8,13 @@ import {
     IonResource
 } from 'cesium';
 import * as Cesium from "cesium";
-import SosGetResultJson from "./osh-js/source/core/datasource/SosGetResultJson";
-import PointMarkerLayer from "./osh-js/source/core/ui/layer/PointMarkerLayer";
-import PolygonLayer from "./osh-js/source/core/ui/layer/PolygonLayer";
-import FFMPEGView from "./osh-js/source/core/ui/view/video/FFMPEGView";
-import SosGetResultVideo from "./osh-js/source/core/datasource/SosGetResultVideo";
-import ChartJsView from './osh-js/source/core/ui/view/chart/ChartJsView.js';
-import CurveLayer from './osh-js/source/core/ui/layer/CurveLayer.js';
-import DataSynchronizer from './osh-js/source/core/timesync/DataSynchronizer'
+import SosGetResult from 'osh-js/source/core/datasource/sos/SosGetResult.datasource'
+import PointMarkerLayer from "osh-js/source/core/ui/layer/PointMarkerLayer";
+import PolygonLayer from "osh-js/source/core/ui/layer/PolygonLayer";
+import FFMPEGView from "osh-js/source/core/ui/view/video/FFMPEGView";
+import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
+import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
+import DataSynchronizer from 'osh-js/source/core/timesync/DataSynchronizer';
 
 window.CESIUM_BASE_URL = './';
 
@@ -33,7 +32,7 @@ let dataSources = [];
 // UAV
 
 // -------- UAV LOCATION AND ORIENTATION
-let uavLocDataSource = new SosGetResultJson("UAV-Location", {
+let uavLocDataSource = new SosGetResult("UAV-Location", {
     protocol: "wss",
     service: "SOS",
     endpointUrl: server,
@@ -46,7 +45,7 @@ let uavLocDataSource = new SosGetResultJson("UAV-Location", {
 dataSources.push(uavLocDataSource);
 // uavLocDataSource.connect();
 
-let uavAttitudeDataSource = new SosGetResultJson("UAV-Attitude", {
+let uavAttitudeDataSource = new SosGetResult("UAV-Attitude", {
     protocol: "wss",
     service: "SOS",
     endpointUrl: server,
@@ -94,7 +93,7 @@ uavPointMarker.props.description = "UAV UAS";
 
 // --- UAV VIDEO
 
-let uavVideoDS = new SosGetResultVideo("UAV-Video",{
+let uavVideoDS = new SosGetResult("UAV-Video",{
     protocol: "wss",
     service: "SOS",
     endpointUrl: server,
@@ -166,7 +165,7 @@ let altitudeChartView = new ChartJsView({
 
 // ------- UAV Field of Regard ------- //
 
-let uavForDataSource = new SosGetResultJson("UAV-FOR", {
+let uavForDataSource = new SosGetResult("UAV-FOR", {
     protocol: "wss",
     service: "SOS",
     endpointUrl: server,
@@ -200,7 +199,7 @@ let boundedDrapingLayer = new PolygonLayer({
 
 // ------- UAV Tracking Target ------- //
 
-let suvForDataSource = new SosGetResultJson("SUV-TARGET", {
+let suvForDataSource = new SosGetResult("SUV-TARGET", {
     protocol: "wss",
     service: "SOS",
     endpointUrl: server,
@@ -242,22 +241,22 @@ let suvPointMarker = new PointMarkerLayer({
 // create Cesium view
 let cesiumView = new CesiumView({
     container: 'cesium-container',
-    cesiumProps: {
-        viewerProps :{ 
-            baseLayerPicker: true,
-            // imageryProviderViewModels: imageryProviders,
-            // selectedImageryProviderViewModel: imageryProviders[6],
-            timeline: true,
-            homeButton: false,
-            navigationInstructionsInitiallyVisible: false,
-            navigationHelpButton: false,
-            geocoder: true,
-            fullscreenButton: false,
-            showRenderLoopErrors: true,
-            animation: true,
-            scene3DOnly: true, // for draw layer
-            }
-    },
+    // cesiumProps: {
+    //     viewerProps :{
+    //         baseLayerPicker: true,
+    //         // imageryProviderViewModels: imageryProviders,
+    //         // selectedImageryProviderViewModel: imageryProviders[6],
+    //         timeline: true,
+    //         homeButton: false,
+    //         navigationInstructionsInitiallyVisible: false,
+    //         navigationHelpButton: false,
+    //         geocoder: true,
+    //         fullscreenButton: false,
+    //         showRenderLoopErrors: true,
+    //         animation: true,
+    //         scene3DOnly: true, // for draw layer
+    //         }
+    // },
     layers: [uavPointMarker, boundedDrapingLayer, suvPointMarker]
 });
 
