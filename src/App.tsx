@@ -28,7 +28,7 @@ import VideoView from "osh-js/source/core/ui/view/video/VideoView";
 const App = () => {
 
     useEffect(() => {
-        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkMDE5MzJmNC1hMTQ5LTQxOTEtODJiOC00ZDM4YTZiMDFhYTUiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI0NTJ9.uTTE9gv7JB3y_XzV7FTmBcKUAOMYyOZ97h03_gasO7c';
+        // Ion.defaultAccessToken = '';
 
         let server = "localhost:8282/sensorhub/api";
         let start = "2017-08-21T14:27:53Z";
