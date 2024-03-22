@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2024.  Botts Innovative Research, Inc.
+ * All Rights Reserved
+ *
+ * opensensorhub/osh-viewer is licensed under the
+ *
+ * Mozilla Public License 2.0
+ * Permissions of this weak copyleft license are conditioned on making available source code of licensed
+ * files and modifications of those files under the same license (or in certain cases, one of the GNU licenses).
+ * Copyright and license notices must be preserved. Contributors provide an express grant of patent rights.
+ * However, a larger work using the licensed work may be distributed under different terms and without
+ * source code for files added in the larger work.
+ *
+ */
 import React, {useEffect} from "react";
 
 // @ts-ignore
@@ -30,14 +44,14 @@ const App = () => {
     useEffect(() => {
         // Ion.defaultAccessToken = '';
 
-        let server = "localhost:8282/sensorhub/api";
-        let start = "2017-08-21T14:27:53Z";
-        let end = "2100-01-01Z";
-        let secure = false;
-        let locationInfoDsId = "r5adq419u4h4c";
-        let attitudeInfoDsId = "v9353nsml40cu";
-        let videoDsId = "";
-        let fovDsId = "";
+        let server = "api.georobotix.io/ogc/t18/api";
+        let start = new Date((Date.now() - 600000)).toISOString();
+        let end = "2024-12-31T23:59:59Z";
+        let secure = true;
+        let locationInfoDsId = "o7pce3e60s0ie";
+        let attitudeInfoDsId = "mlme3gtdfepvc";
+        let videoDsId = "h225hesual08g";
+        let fovDsId = "iabpf1ivua1qm";
         let suvDsId = "";
 
         let dataSources = [];
@@ -48,7 +62,6 @@ const App = () => {
 
         let uavLocDataSource = new SweApi("UAV-Location", {
             protocol: "wss",
-            service: "SOS",
             endpointUrl: server,
             resource: `/datastreams/${locationInfoDsId}/observations`,
             startTime: start,
@@ -58,7 +71,6 @@ const App = () => {
         });
 
         dataSources.push(uavLocDataSource);
-        // uavLocDataSource.connect();
 
         let uavAttitudeDataSource = new SweApi("UAV-Attitude", {
             protocol: "wss",
@@ -71,7 +83,6 @@ const App = () => {
         });
 
         dataSources.push(uavAttitudeDataSource);
-        // uavAttitudeDataSource.connect();
 
         // style it with a moving point marker
         let uavPointMarker = new PointMarkerLayer({
@@ -80,9 +91,9 @@ const App = () => {
                 dataSourceIds: [uavLocDataSource.getId()],
                 handler: function (rec: any) {
                     return {
-                        x: rec.loc.lon,
-                        y: rec.loc.lat,
-                        z: rec.loc.alt
+                        x: rec.location.lon,
+                        y: rec.location.lat,
+                        z: rec.location.alt
                     }
                 }
 
@@ -91,11 +102,11 @@ const App = () => {
                 dataSourceIds: [uavAttitudeDataSource.getId()],
                 handler: function (rec: any) {
                     return {
-                        heading: rec.attitude.yaw - 90.0
+                        heading: rec.attitude.heading - 90.0
                     }
                 }
             },
-            icon: 'images/drone.glb',
+            icon: 'images/uav.glb',
             iconSize: [32, 64],
             name: "UAV Location",
             label: "UAV",
@@ -106,75 +117,74 @@ const App = () => {
         uavPointMarker.props.markerId = "UAV UAS";
         uavPointMarker.props.description = "UAV UAS";
 
-        // // --- UAV VIDEO
-        //
-        // let uavVideoDS = new SweApi("UAV-Video", {
-        //     protocol: "wss",
-        //     endpointUrl: server,
-        //     resource: `/datastreams/${videoDsId}/observations`,
-        //     startTime: start,
-        //     endTime: end,
-        //     mode: Mode.REPLAY,
-        //     tls: secure
-        // })
-        //
-        // let videoDataLayer = new VideoDataLayer({
-        //     dataSourceId: [uavVideoDS.getId()],
-        //     getFrameData: (rec: any) => {
-        //         return rec.img
-        //     },
-        //     getTimestamp: (rec: any) => {
-        //         return rec.timestamp
-        //     }
-        // });
-        //
-        // let videoView = new VideoView({
-        //     container: 'video-window',
-        //     css: 'video-h264',
-        //     name: "UAV Video",
-        //     framerate: 25,
-        //     showTime: false,
-        //     showStats: false,
-        //     layers: [videoDataLayer]
-        // });
-        //
-        // dataSources.push(uavVideoDS);
-        // // uavVideoDS.connect();
-        //
-        // // ------- UAV Field of Regard ------- //
-        //
-        // let uavForDataSource = new SweApi("UAV-FOR", {
-        //     protocol: "wss",
-        //     endpointUrl: server,
-        //     resource: `/datastreams/${fovDsId}/observations`,
-        //     startTime: start,
-        //     endTime: end,
-        //     mode: Mode.REPLAY,
-        //     tls: secure
-        // });
-        //
-        // dataSources.push(uavForDataSource);
-        // // uavForDataSource.connect();
-        //
-        // let boundedDrapingLayer = new PolygonLayer({
-        //     opacity: .5,
-        //     getVertices: {
-        //         dataSourceIds: [uavForDataSource.getId()],
-        //         handler: function (rec: any) {
-        //             return [
-        //                 rec.ulc.lon,
-        //                 rec.ulc.lat,
-        //                 rec.llc.lon,
-        //                 rec.llc.lat,
-        //                 rec.lrc.lon,
-        //                 rec.lrc.lat,
-        //                 rec.urc.lon,
-        //                 rec.urc.lat,
-        //             ];
-        //         }
-        //     },
-        // });
-        //
+        // --- UAV VIDEO
+
+        let uavVideoDS = new SweApi("UAV-Video", {
+            protocol: "wss",
+            endpointUrl: server,
+            resource: `/datastreams/${videoDsId}/observations`,
+            startTime: start,
+            endTime: end,
+            mode: Mode.REPLAY,
+            tls: secure,
+            responseFormat: 'application/swe+binary'
+        })
+
+        let videoDataLayer = new VideoDataLayer({
+            dataSourceId: [uavVideoDS.getId()],
+            getFrameData: (rec: any) => {
+                return rec.img
+            },
+            getTimestamp: (rec: any) => {
+                return rec.timestamp
+            }
+        });
+
+        let videoView = new VideoView({
+            container: 'video-window',
+            css: 'video-h264',
+            name: "UAV Video",
+            framerate: 25,
+            showTime: false,
+            showStats: false,
+            layers: [videoDataLayer]
+        });
+
+        dataSources.push(uavVideoDS);
+
+        // ------- UAV Field of Regard ------- //
+
+        let uavForDataSource = new SweApi("UAV-FOR", {
+            protocol: "wss",
+            endpointUrl: server,
+            resource: `/datastreams/${fovDsId}/observations`,
+            startTime: start,
+            endTime: end,
+            mode: Mode.REPLAY,
+            tls: secure
+        });
+
+        dataSources.push(uavForDataSource);
+
+        let boundedDrapingLayer = new PolygonLayer({
+            opacity: .5,
+            getVertices: {
+                dataSourceIds: [uavForDataSource.getId()],
+                handler: function (rec: any) {
+                    return [
+                        rec.geoRef.ulc.lon,
+                        rec.geoRef.ulc.lat,
+                        rec.geoRef.llc.lon,
+                        rec.geoRef.llc.lat,
+                        rec.geoRef.lrc.lon,
+                        rec.geoRef.lrc.lat,
+                        rec.geoRef.urc.lon,
+                        rec.geoRef.urc.lat,
+                    ];
+                }
+            },
+        });
+
         // // ------- UAV Tracking Target ------- //
         //
         // let suvForDataSource = new SweApi("SUV-TARGET", {
@@ -219,8 +229,7 @@ const App = () => {
         // create Cesium view
         let cesiumView = new CesiumView({
             container: 'cesium-container',
-            // layers: [uavPointMarker, boundedDrapingLayer, suvPointMarker],
-            layers: [uavPointMarker],
+            layers: [uavPointMarker, boundedDrapingLayer],
             options: {
                 viewerProps: {
                     terrain: Terrain.fromWorldTerrain(),
@@ -273,13 +282,13 @@ const App = () => {
 
     return (
         <div id="container">
-            {/*<div id="left">*/}
+            <div id="left">
                 <div id="cesium-container"></div>
-            {/*</div>*/}
-            {/*<div id="right">*/}
-            {/*    <div className="title">UAV Video Stream</div>*/}
-            {/*    <div id="video-window"></div>*/}
-            {/*</div>*/}
+            </div>
+            <div id="right">
+                <div className="title">UAV Video Stream</div>
+                <div id="video-window"></div>
+            </div>
         </div>
     );
 };
