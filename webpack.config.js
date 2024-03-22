@@ -1,105 +1,113 @@
-/* webpack.config.js */
-
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var CopyWebpackPlugin = require('copy-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-
-var path = require('path');
+const path = require("path");
+const nodePolyfillWebpackPlugin = require('node-polyfill-webpack-plugin')
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const {DefinePlugin} = require('webpack');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const PROCESS_BASE_PATH = process.cwd();
 
 // Cesium deps
-const cesiumSource = 'node_modules/cesium/Source';
-const cesiumWorkers = '../Build/Cesium/Workers';
-//
+const cesiumSource = 'node_modules/cesium/Build/Cesium';
+const cesiumBaseUrl = "cesiumStatic";
 
 module.exports = {
-    // Tell Webpack which file kicks off our app.
-    entry: path.resolve(__dirname,'main.js'),
-    // Tell Weback to output our bundle to ./dist/bundle.js
+    entry: "./src/index.tsx",
     output: {
-        filename: 'bundle.geoint.demo.js',
-        path: path.resolve(__dirname, 'dist'),
-        // Needed to compile multiline strings in Cesium
-        sourcePrefix: ''
+        filename: "main.js",
+        path: path.resolve(__dirname, "build"),
     },
-    amd: {
-        // Enable webpack-friendly use of require in Cesium
-        toUrlUndefined: true
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: path.join(__dirname, "./", "index.html"),
+            favicon: path.join(__dirname, "images", "opensensorhub.png")
+        }),
+        new DefinePlugin({
+            BASE_URL: JSON.stringify('/'),
+            // Define relative base path in cesium for loading assets
+            // CESIUM_BASE_URL: JSON.stringify('cesium')
+            CESIUM_BASE_URL: JSON.stringify(cesiumBaseUrl)
+        }),
+        new CopyWebpackPlugin({
+            patterns: [
+                { from: path.resolve(__dirname,'images'), to: 'images', noErrorOnMissing: true},
+                { from: path.join(PROCESS_BASE_PATH+'/'+cesiumSource, 'ThirdParty'), to: `${cesiumBaseUrl}/ThirdParty`, force:true },
+                { from: path.join(PROCESS_BASE_PATH+'/'+cesiumSource, 'Workers'), to: `${cesiumBaseUrl}/Workers`, force:true },
+                { from: path.join(PROCESS_BASE_PATH+'/'+cesiumSource, 'Assets'), to: `${cesiumBaseUrl}/Assets`, force:true },
+                { from: path.join(PROCESS_BASE_PATH+'/'+cesiumSource, 'Widgets'), to: `${cesiumBaseUrl}/Widgets`, force:true }
+            ],
+        }),
+        new nodePolyfillWebpackPlugin(),
+    ],
+    devServer: {
+        client: {
+            overlay: false
+        },
+        static: {
+            directory: path.join(__dirname, "build"),
+        },
+        port: 3000,
     },
-    node: {
-        // Resolve node module use of fs
-        fs: 'empty'
+    module: {
+        // exclude node_modules
+        rules: [
+            {
+                test: /\.(js|jsx|tsx)$/,
+                exclude: /node_modules/,
+                use: ["babel-loader"],
+            },
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader',]
+            },
+            {
+                test: /\.(glb|gltf)$/,
+                use: {
+                    loader: 'file-loader',
+                    options: {
+                        name: '[name].[ext]',
+                    }
+                }
+            },
+            {
+                test: /\.(mp4)$/,
+                use: {
+                    loader: 'file-loader',
+                    options: {
+                        name: '[name].[ext]',
+                    }
+                }
+            },
+            {
+                test: /\.(png|svg|jpg|gif)$/,
+                use: {
+                    loader: 'file-loader',
+                    options: {
+                        name: '[name].[ext]',
+                    }
+                },
+            },
+            {
+                test: /\.worker\.js$/,
+                use: {loader: 'worker-loader', options: {filename: 'Worker.[chunkhash].js'}}
+            },
+        ],
     },
-    // Tell Webpack which directories to look in to resolve import statements.
-    // Normally Webpack will look in node_modules by default but since we’re overriding
-    // the property we’ll need to tell it to look there in addition to the
-    // bower_components folder.
+    // pass all js files through Babel
     resolve: {
         modules: [
             path.resolve(__dirname, 'node_modules'),
         ],
-        alias: {
-            'osh-js': path.resolve(__dirname, 'osh-js')
+        extensions: [".*", ".js", ".jsx", ".tsx"],    // <-- added `.jsx` here
+        fallback: {
+            "url": require.resolve("url/"),
+            "zlib": require.resolve("browserify-zlib"),
+            "https": require.resolve("https-browserify"),
+            "http": require.resolve("stream-http"),
+            "buffer": require.resolve("buffer/"),
+            "assert": require.resolve("assert/"),
+            "util": require.resolve("util/"),
+            "stream": require.resolve("stream-browserify"),
+            fs: false
         }
-    },
-    // These rules tell Webpack how to process different module types.
-    // Remember, *everything* is a module in Webpack. That includes
-    // CSS, and (thanks to our loader) HTML.
-    module: {
-        rules: [
-            {
-                test: /\.(png|svg|jpg|gif)$/,
-                use: [
-                    'file-loader',
-                ],
-            },{
-                test: /\.css$/i,
-                use: ['style-loader', 'css-loader'],
-            }, {
-                test: /\.worker\.js$/,
-                use: { loader: 'worker-loader', options: { name: 'WorkerName.[hash].js' } }
-            }
-        ]
-    },
-    // Enable the Webpack dev server which will build, serve, and reload our
-    // project on changes.
-    devServer: {
-        contentBase: path.join(__dirname, 'dist'),
-        compress: true,
-        port: 9000,
-        hot: true,
-        index: 'index.html'
-    },
-    devtool: 'source-map',
-    plugins: [
-        /**
-         * All files inside webpack's output.path directory will be removed once, but the
-         * directory itself will not be. If using webpack 4+'s default configuration,
-         * everything under <PROJECT_DIR>/dist/ will be removed.
-         * Use cleanOnceBeforeBuildPatterns to override this behavior.
-         *
-         * During rebuilds, all webpack assets that are not used anymore
-         * will be removed automatically.
-         *
-         * See `Options and Defaults` for information
-         */
-        new CleanWebpackPlugin(),
-        // This plugin will generate an index.html file for us that can be used
-        // by the Webpack dev server. We can give it a template file (written in EJS)
-        // and it will handle injecting our bundle for us.
-        new HtmlWebpackPlugin({
-            filename: "index.html",
-            template: path.resolve(__dirname, 'index.html')
-        }),
-        // This plugin will copy files over to ‘./dist’ without transforming them.
-        // That's important because the custom-elements-es5-adapter.js MUST
-        // remain in ES2015. We’ll talk about this a bit later :)
-        new CopyWebpackPlugin([
-            { from: path.resolve(__dirname,'images'), to: 'images'},
-            { from: path.join(PROCESS_BASE_PATH+'/'+cesiumSource, cesiumWorkers), to: 'Workers', force:true },
-            { from: path.join(PROCESS_BASE_PATH+'/'+cesiumSource, 'Assets'), to: 'Assets', force:true },
-            { from: path.join(PROCESS_BASE_PATH+'/'+cesiumSource, 'Widgets'), to: 'Widgets', force:true }
-        ])
-    ]
+    }
 };
