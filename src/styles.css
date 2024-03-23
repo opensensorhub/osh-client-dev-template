@@ -1,0 +1,55 @@
+body {
+    margin: 0 !important
+}
+
+#container {
+    /* height: calc(100% - 15px); */
+    height: 100%;
+    overflow: hidden;
+    background-color: white;
+}
+
+#top {
+    flex-direction: row;
+    /* width:calc(75% - 50px); */
+    width:100%;
+    float:left;
+    height:10%;
+}
+
+#hero {
+    flex-direction: row;
+    /* width:calc(25% - 50px); */
+    width:100%;
+    float:left;
+    height:90%;
+}
+
+.flex-container {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    align-content: stretch;
+    margin: 10px;
+}
+
+.flex-child {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-content: baseline;
+    padding: 5px;
+    font-size: 22px;
+}
+
+#product-time, #elevations, #site {
+    font-size: 22px;
+}
+
+.select {
+    padding: 5px;
+    border: 2px solid #000000;
+    background-color: white;
+    font-size: 18px;
+    appearance: menulist;
+}
