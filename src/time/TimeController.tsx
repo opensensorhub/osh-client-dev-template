@@ -32,7 +32,6 @@ import {Mode} from "osh-js/source/core/datasource/Mode";
 
 interface ITimeControllerProps {
 
-    children?: any,
     style?: React.CSSProperties,
     dataSynchronizer: DataSynchronizer,
     startTime: number,
@@ -183,22 +182,22 @@ const TimeController = (props: ITimeControllerProps) => {
         props.dataSynchronizer.disconnect().then();
     }
 
+    const updateTimeRange = async (dataSynchronizer: DataSynchronizer, time: number, speed: number) => {
+
+        for (let dataSource of dataSynchronizer.getDataSources()) {
+
+            dataSource.setMinTime(new Date(time).toISOString());
+        }
+
+        await dataSynchronizer.setTimeRange(new Date(time).toISOString(), props.endTime, speed, false);
+    }
+
     const start = () => {
 
         // Ensure all data sources are using playback time period
         if (inPlaybackMode) {
 
             setPlaybackState("PLAY");
-
-            let updateTimeRange = async (dataSynchronizer: DataSynchronizer, time: number, speed: number) => {
-
-                for (let dataSource of dataSynchronizer.getDataSources()) {
-
-                    dataSource.setMinTime(new Date(time).toISOString());
-                }
-
-                await dataSynchronizer.setTimeRange(new Date(time).toISOString(), props.endTime, speed, false);
-            }
 
             updateTimeRange(props.dataSynchronizer, currentTime, playbackSpeed).then();
         }
@@ -221,16 +220,6 @@ const TimeController = (props: ITimeControllerProps) => {
         }
 
         setCurrentTime(adjustedTime);
-
-        let updateTimeRange = async (dataSynchronizer: DataSynchronizer, time: number, speed: number) => {
-
-            for (let dataSource of dataSynchronizer.getDataSources()) {
-
-                dataSource.setMinTime(new Date(time).toISOString());
-            }
-
-            await dataSynchronizer.setTimeRange(new Date(time).toISOString(), props.endTime, speed, false);
-        }
 
         updateTimeRange(props.dataSynchronizer, adjustedTime, playbackSpeed).then();
     }
