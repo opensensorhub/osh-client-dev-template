@@ -124,6 +124,8 @@ const TimeController = (props: ITimeControllerProps) => {
             }
 
             setCurrentTime(0);
+
+            document.getElementById('TimeController').removeAttribute('disabled');
         }
 
     }, [inPlaybackMode]);
