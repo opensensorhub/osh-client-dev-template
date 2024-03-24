@@ -184,9 +184,7 @@ const TimeController = (props: ITimeControllerProps) => {
 
                 } else {
 
-                    setMode(dataSynchronizer, Mode.REPLAY)
-                        .then(dataSynchronizer => {
-                        });
+                    setMode(dataSynchronizer, Mode.REPLAY).then();
                 }
 
                 setInPlaybackMode(!inPlaybackMode);
@@ -197,7 +195,7 @@ const TimeController = (props: ITimeControllerProps) => {
 
         setPlaybackState("PAUSE");
 
-        props.dataSynchronizer.disconnect().then();
+        disconnect(props.dataSynchronizer).then();
     }
 
     const updateTimeRange = async (dataSynchronizer: DataSynchronizer, time: number, speed: number) => {
