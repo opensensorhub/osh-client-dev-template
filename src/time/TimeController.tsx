@@ -128,19 +128,31 @@ const TimeController = (props: ITimeControllerProps) => {
 
     }, [inPlaybackMode]);
 
+    const disconnect = async (dataSynchronizer: DataSynchronizer) => {
+
+        await dataSynchronizer.disconnect();
+        return dataSynchronizer;
+    }
+
     const updateCurrentTime = (values: string[]) => {
 
         setCurrentTime(Number(values[0]));
     }
 
+    const updateSpeed = async function (dataSynchronizer: DataSynchronizer, speed: number) {
+
+        await dataSynchronizer.setReplaySpeed(speed);
+    }
+
+    const setMode = async (dataSynchronizer: DataSynchronizer, mode: Mode) => {
+
+        await dataSynchronizer.setMode(mode);
+        return dataSynchronizer;
+    }
+
     const slowDown = () => {
 
         let newSpeed = (playbackSpeed - 0.25) > 0.25 ? (playbackSpeed - 0.25) : 0.25;
-
-        let updateSpeed = async function (dataSynchronizer: DataSynchronizer, speed: number) {
-
-            await dataSynchronizer.setReplaySpeed(speed);
-        }
 
         updateSpeed(props.dataSynchronizer, newSpeed).then();
 
@@ -151,28 +163,32 @@ const TimeController = (props: ITimeControllerProps) => {
 
         let newSpeed = (playbackSpeed + 0.25) < 10 ? (playbackSpeed + 0.25) : 10;
 
-        let updateSpeed = async function (dataSynchronizer: DataSynchronizer, speed: number) {
-
-            await dataSynchronizer.setReplaySpeed(speed);
-        }
-
         updateSpeed(props.dataSynchronizer, newSpeed).then();
 
         setPlaybackSpeed(newSpeed);
     }
 
     const togglePlaybackMode = () => {
+        disconnect(props.dataSynchronizer)
+            .then(dataSynchronizer => {
 
-        let mode = Mode.REPLAY;
+                if (inPlaybackMode) {
 
-        if (!inPlaybackMode) {
+                    setMode(dataSynchronizer, Mode.REAL_TIME)
+                        .then(async (dataSynchronizer) => {
 
-            mode = Mode.REAL_TIME;
-        }
+                            await dataSynchronizer.connect();
+                        });
 
-        props.dataSynchronizer.setMode(mode);
+                } else {
 
-        setInPlaybackMode(!inPlaybackMode);
+                    setMode(dataSynchronizer, Mode.REPLAY)
+                        .then(dataSynchronizer => {
+                        });
+                }
+
+                setInPlaybackMode(!inPlaybackMode);
+            });
     }
 
     const pause = () => {
