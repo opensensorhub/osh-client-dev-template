@@ -168,7 +168,7 @@ const TimeController = (props: ITimeControllerProps) => {
 
         if (!inPlaybackMode) {
 
-            mode = mode.REAL_TIME;
+            mode = Mode.REAL_TIME;
         }
 
         props.dataSynchronizer.setMode(mode);
