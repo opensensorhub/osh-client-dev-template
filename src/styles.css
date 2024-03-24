@@ -22,7 +22,15 @@ body {
     /* width:calc(25% - 50px); */
     width:100%;
     float:left;
-    height:90%;
+    height:75%;
+}
+
+#bottom {
+    flex-direction: row;
+    /* width:calc(75% - 50px); */
+    width:100%;
+    float:left;
+    height:15%;
 }
 
 .flex-container {

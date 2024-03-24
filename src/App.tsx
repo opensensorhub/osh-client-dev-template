@@ -13,6 +13,7 @@
  *
  */
 import React, {useEffect, useState} from "react";
+import {FormControl, InputLabel, MenuItem, Select, SelectChangeEvent} from "@mui/material";
 
 // @ts-ignore
 import {
@@ -37,26 +38,32 @@ import NexradSites from "./NexradSites";
 import NexradLayer from "./NexradLayer";
 
 import "./styles.css";
-import {FormControl, InputLabel, MenuItem, Select, SelectChangeEvent} from "@mui/material";
+import TimeController from "./time/TimeController";
 
 const App = () => {
 
     let [prevElevationNumber, setPrevElevationNumber] = useState<number>();
     let [elevation, setElevation]: [number, (value: (((prevState: number) => number) | number)) => void] = useState<number>(1);
-    let [activeSite, setActiveSite]: [string, (value: (((prevState: string) => string) | string)) => void] = useState<string>('KEWX');
+    let [activeSite, setActiveSite]: [string, (value: (((prevState: string) => string) | string)) => void] = useState<string>('SELECT');
     let [nexradView, setNexradView] = useState<NexradView>();
     let [nexradSites, setNexradSites] = useState<NexradSites>();
     let [currentLabel, setCurrentLabel] = useState<any>();
+    let [dataSynchronizer, setDataSynchronizer] = useState<DataSynchronizer>();
+    let [startTime, setStartTime] = useState<string>()
+    let [endTime, setEndTime] = useState<string>()
 
     useEffect(() => {
 
         let server = "76.187.247.4:8282/sensorhub/sos";
         let offeringId = "urn:osh:sensor:weather:nexrad";
         let observedProperty = "http://sensorml.com/ont/swe/propertyx/NexradRadial";
-        let start = new Date((Date.now() - 600000)).toISOString();
-        let end = "2024-12-31T23:59:59Z";
+        let start = (new Date(Date.now() - (20 * 1000 * 60) ).toISOString());
+        let end = (new Date().toISOString());
         let secure = false;
         let replaySpeed = 10;
+
+        setStartTime(start);
+        setEndTime(end);
 
         let dataSources = [];
 
@@ -161,20 +168,20 @@ const App = () => {
         baseLayerPicker.viewModel.selectedTerrain =
             terrainProviders.find((terrainProviders: any) => terrainProviders.name === "Cesium World Terrain");
 
-        let viewer = nexradView.viewer;
+        // let viewer = nexradView.viewer;
 
-        viewer.camera.flyTo({
-            destination: Cartesian3.fromDegrees(-86.67128902952935, 34.70690480206765, 10000)
-        });
+        // viewer.camera.flyTo({
+        //     destination: Cartesian3.fromDegrees(-86.67128902952935, 34.70690480206765, 10000)
+        // });
 
         // start streaming
-        let masterTimeController = new DataSynchronizer({
+        let dataSynchronizer = new DataSynchronizer({
             replaySpeed: 1,
             intervalRate: 5,
             dataSources: dataSources
         });
 
-        masterTimeController.connect().then();
+        setDataSynchronizer(dataSynchronizer);
 
     }, [])
 
@@ -243,6 +250,7 @@ const App = () => {
                         }}
                         className={"flex-child"}
                     >
+                        <MenuItem value={"SELECT"}>SELECT</MenuItem>
                         <MenuItem value={"KEWX"}>KEWX</MenuItem>
                         <MenuItem value={"KHGX"}>KHGX</MenuItem>
                         <MenuItem value={"KHTX"}>KHTX</MenuItem>
@@ -271,6 +279,14 @@ const App = () => {
             </div>
             <div id="hero">
                 <div id="cesium-container"></div>
+            </div>
+            <div id="bottom">
+                {dataSynchronizer != null ?
+                    <TimeController dataSynchronizer={dataSynchronizer}
+                                    startTime={Date.parse(startTime)}
+                                    endTime={Date.parse(endTime)}/>
+                    : null
+                }
             </div>
         </div>
     );
