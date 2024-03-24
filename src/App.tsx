@@ -60,7 +60,7 @@ const App = () => {
         let start = (new Date(Date.now() - (20 * 1000 * 60) ).toISOString());
         let end = (new Date().toISOString());
         let secure = false;
-        let replaySpeed = 10;
+        let replaySpeed = 1;
 
         setStartTime(start);
         setEndTime(end);
@@ -177,7 +177,7 @@ const App = () => {
         // start streaming
         let dataSynchronizer = new DataSynchronizer({
             replaySpeed: 1,
-            intervalRate: 5,
+            timerResolution: 5,
             dataSources: dataSources
         });
 
