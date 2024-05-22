@@ -12,7 +12,7 @@
  * source code for files added in the larger work.
  *
  */
-import React, {useEffect} from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 
 // @ts-ignore
 import {
@@ -27,7 +27,7 @@ import CesiumView from "osh-js/source/core/ui/view/map/CesiumView.js";
 // @ts-ignore
 import DataSynchronizer from 'osh-js/source/core/timesync/DataSynchronizer';
 // @ts-ignore
-import {Mode} from "osh-js/source/core/datasource/Mode";
+import { Mode } from "osh-js/source/core/datasource/Mode";
 // @ts-ignore
 import PointMarkerLayer from "osh-js/source/core/ui/layer/PointMarkerLayer";
 // @ts-ignore
@@ -39,109 +39,191 @@ import VideoDataLayer from "osh-js/source/core/ui/layer/VideoDataLayer";
 // @ts-ignore
 import VideoView from "osh-js/source/core/ui/view/video/VideoView";
 
-const App = () => {
+export default function App() {
+    // A Cesium Ion access token can be obtained for free from https://ion.cesium.com/.
+    // Do not commit your access token to a public repository.
+    // Ion.defaultAccessToken = '';
+
+    const server = "api.georobotix.io/ogc/t18/api";
+    const start = useMemo(() => new Date((Date.now() - 600000)).toISOString(), []);
+    const end = "2024-12-31T23:59:59Z";
+    const secure = true;
+    const locationInfoDsId = "o7pce3e60s0ie";
+    const attitudeInfoDsId = "mlme3gtdfepvc";
+    const videoDsId = "h225hesual08g";
+    const fovDsId = "iabpf1ivua1qm";
+
+    //#region Data Sources
+    /**
+     * UAV Location data source
+     * 
+     * @remarks This data source will be used by the point marker layer to display the UAV's location.
+     */
+    const uavLocDataSource = useMemo(() => new SweApi("UAV-Location", {
+        protocol: "wss",
+        endpointUrl: server,
+        resource: `/datastreams/${locationInfoDsId}/observations`,
+        startTime: start,
+        endTime: end,
+        mode: Mode.REPLAY,
+        tls: secure
+    }), []);
+
+    /**
+     * UAV Attitude data source
+     * 
+     * @remarks This data source will be used by the point marker layer to display the UAV's orientation.
+     */
+    const uavAttitudeDataSource = useMemo(() => new SweApi("UAV-Attitude", {
+        protocol: "wss",
+        endpointUrl: server,
+        resource: `/datastreams/${attitudeInfoDsId}/observations`,
+        startTime: start,
+        endTime: end,
+        mode: Mode.REPLAY,
+        tls: secure
+    }), []);
+
+    /**
+     * UAV Video data source
+     * 
+     * @remarks This data source will be used by the video view to display the UAV's video stream.
+     */
+    const uavVideoDataSource = useMemo(() => new SweApi("UAV-Video", {
+        protocol: "wss",
+        endpointUrl: server,
+        resource: `/datastreams/${videoDsId}/observations`,
+        startTime: start,
+        endTime: end,
+        mode: Mode.REPLAY,
+        tls: secure,
+        responseFormat: 'application/swe+binary'
+    }), []);
+
+    /**
+     * UAV Field of Regard data source
+     * 
+     * @remarks This data source will be used by the bounded draping layer to display the UAV's field of regard.
+     */
+    const uavForDataSource = useMemo(() => new SweApi("UAV-FOR", {
+        protocol: "wss",
+        endpointUrl: server,
+        resource: `/datastreams/${fovDsId}/observations`,
+        startTime: start,
+        endTime: end,
+        mode: Mode.REPLAY,
+        tls: secure
+    }), []);
+
+    /**
+     * Data Sources
+     * 
+     * @remarks This array contains all the data sources that will be used by the master time controller.
+     */
+    const dataSources = useMemo(() => {
+        return [
+            uavLocDataSource,
+            uavAttitudeDataSource,
+            uavVideoDataSource,
+            uavForDataSource
+        ];
+    }, [uavLocDataSource, uavAttitudeDataSource, uavVideoDataSource, uavForDataSource]);
+    //#endregion
+
+    //#region Layers
+    /**
+     * UAV Point Marker Layer
+     * 
+     * @remarks This layer will be used by the Cesium view to display the UAV's location and orientation.
+     */
+    const uavPointMarker = useMemo(() => new PointMarkerLayer({
+        labelOffset: [0, -30],
+        getLocation: {
+            dataSourceIds: [uavLocDataSource.getId()],
+            handler: function (rec: any) {
+                return {
+                    x: rec.location.lon,
+                    y: rec.location.lat,
+                    z: rec.location.alt
+                }
+            }
+
+        },
+        getOrientation: {
+            dataSourceIds: [uavAttitudeDataSource.getId()],
+            handler: function (rec: any) {
+                return {
+                    heading: rec.attitude.heading - 90.0
+                }
+            }
+        },
+        icon: 'images/uav.glb',
+        iconSize: [32, 64],
+        name: "UAV Location",
+        label: "UAV",
+        iconScale: .05,
+        color: '#FF8000'
+    }), [uavLocDataSource]);
+
+    /**
+     * Bounded Draping Layer
+     * 
+     * @remarks This layer will be used by the Cesium view to display the UAV's field of regard.
+     */
+    const boundedDrapingLayer = useMemo(() => new PolygonLayer({
+        opacity: .5,
+        getVertices: {
+            dataSourceIds: [uavForDataSource.getId()],
+            handler: function (rec: any) {
+                return [
+                    rec.geoRef.ulc.lon,
+                    rec.geoRef.ulc.lat,
+                    rec.geoRef.llc.lon,
+                    rec.geoRef.llc.lat,
+                    rec.geoRef.lrc.lon,
+                    rec.geoRef.lrc.lat,
+                    rec.geoRef.urc.lon,
+                    rec.geoRef.urc.lat,
+                ];
+            }
+        },
+    }), [uavForDataSource]);
+
+    /**
+     * UAV Video Data Layer
+     * 
+     * @remarks This layer will be used by the video view to display the UAV's video stream.
+     */
+    const videoDataLayer = useMemo(() => new VideoDataLayer({
+        dataSourceId: [uavVideoDataSource.getId()],
+        getFrameData: (rec: any) => {
+            return rec.img
+        },
+        getTimestamp: (rec: any) => {
+            return rec.timestamp
+        }
+    }), [uavVideoDataSource]);
+    //#endregion
+
+    /**
+     * Master Time Controller
+     * 
+     * @remarks This object will synchronize all the data sources and control the replay speed.
+     */
+    const masterTimeController = useMemo(() => new DataSynchronizer({
+        replaySpeed: 1,
+        intervalRate: 5,
+        dataSources: dataSources
+    }), [dataSources]);
 
     useEffect(() => {
-        // Ion.defaultAccessToken = '';
-
-        let server = "api.georobotix.io/ogc/t18/api";
-        let start = new Date((Date.now() - 600000)).toISOString();
-        let end = "2024-12-31T23:59:59Z";
-        let secure = true;
-        let locationInfoDsId = "o7pce3e60s0ie";
-        let attitudeInfoDsId = "mlme3gtdfepvc";
-        let videoDsId = "h225hesual08g";
-        let fovDsId = "iabpf1ivua1qm";
-        let suvDsId = "";
-
-        let dataSources = [];
-
-        // UAV
-
-        // -------- UAV LOCATION AND ORIENTATION
-
-        let uavLocDataSource = new SweApi("UAV-Location", {
-            protocol: "wss",
-            endpointUrl: server,
-            resource: `/datastreams/${locationInfoDsId}/observations`,
-            startTime: start,
-            endTime: end,
-            mode: Mode.REPLAY,
-            tls: secure
-        });
-
-        dataSources.push(uavLocDataSource);
-
-        let uavAttitudeDataSource = new SweApi("UAV-Attitude", {
-            protocol: "wss",
-            endpointUrl: server,
-            resource: `/datastreams/${attitudeInfoDsId}/observations`,
-            startTime: start,
-            endTime: end,
-            mode: Mode.REPLAY,
-            tls: secure
-        });
-
-        dataSources.push(uavAttitudeDataSource);
-
-        // style it with a moving point marker
-        let uavPointMarker = new PointMarkerLayer({
-            labelOffset: [0, -30],
-            getLocation: {
-                dataSourceIds: [uavLocDataSource.getId()],
-                handler: function (rec: any) {
-                    return {
-                        x: rec.location.lon,
-                        y: rec.location.lat,
-                        z: rec.location.alt
-                    }
-                }
-
-            },
-            getOrientation: {
-                dataSourceIds: [uavAttitudeDataSource.getId()],
-                handler: function (rec: any) {
-                    return {
-                        heading: rec.attitude.heading - 90.0
-                    }
-                }
-            },
-            icon: 'images/uav.glb',
-            iconSize: [32, 64],
-            name: "UAV Location",
-            label: "UAV",
-            iconScale: .05,
-            color: '#FF8000'
-        });
-
+        // Set the marker ID and description for the UAV point marker
         uavPointMarker.props.markerId = "UAV UAS";
         uavPointMarker.props.description = "UAV UAS";
 
-        // --- UAV VIDEO
-
-        let uavVideoDS = new SweApi("UAV-Video", {
-            protocol: "wss",
-            endpointUrl: server,
-            resource: `/datastreams/${videoDsId}/observations`,
-            startTime: start,
-            endTime: end,
-            mode: Mode.REPLAY,
-            tls: secure,
-            responseFormat: 'application/swe+binary'
-        })
-
-        let videoDataLayer = new VideoDataLayer({
-            dataSourceId: [uavVideoDS.getId()],
-            getFrameData: (rec: any) => {
-                return rec.img
-            },
-            getTimestamp: (rec: any) => {
-                return rec.timestamp
-            }
-        });
-
-        let videoView = new VideoView({
-            container: 'video-window',
+        // Create the video view with the UAV video data layer
+        const videoView = new VideoView({
+            container: "video-window",
             css: 'video-h264',
             name: "UAV Video",
             framerate: 25,
@@ -150,85 +232,9 @@ const App = () => {
             layers: [videoDataLayer]
         });
 
-        dataSources.push(uavVideoDS);
-
-        // ------- UAV Field of Regard ------- //
-
-        let uavForDataSource = new SweApi("UAV-FOR", {
-            protocol: "wss",
-            endpointUrl: server,
-            resource: `/datastreams/${fovDsId}/observations`,
-            startTime: start,
-            endTime: end,
-            mode: Mode.REPLAY,
-            tls: secure
-        });
-
-        dataSources.push(uavForDataSource);
-
-        let boundedDrapingLayer = new PolygonLayer({
-            opacity: .5,
-            getVertices: {
-                dataSourceIds: [uavForDataSource.getId()],
-                handler: function (rec: any) {
-                    return [
-                        rec.geoRef.ulc.lon,
-                        rec.geoRef.ulc.lat,
-                        rec.geoRef.llc.lon,
-                        rec.geoRef.llc.lat,
-                        rec.geoRef.lrc.lon,
-                        rec.geoRef.lrc.lat,
-                        rec.geoRef.urc.lon,
-                        rec.geoRef.urc.lat,
-                    ];
-                }
-            },
-        });
-
-        // // ------- UAV Tracking Target ------- //
-        //
-        // let suvForDataSource = new SweApi("SUV-TARGET", {
-        //     protocol: "wss",
-        //     endpointUrl: server,
-        //     resource: `/datastreams/${suvDsId}/observations`,
-        //     startTime: start,
-        //     endTime: end,
-        //     mode: Mode.REPLAY,
-        //     tls: secure
-        // });
-        //
-        // dataSources.push(suvForDataSource);
-        // // suvForDataSource.connect();
-        //
-        // // style it with a moving point marker
-        // let suvPointMarker = new PointMarkerLayer({
-        //     labelOffset: [0, -30],
-        //     getLocation: {
-        //         dataSourceIds: [suvForDataSource.getId()],
-        //         handler: function (rec: any) {
-        //             return {
-        //                 x: rec.location.lon,
-        //                 y: rec.location.lat,
-        //             }
-        //         }
-        //
-        //     },
-        //     icon: 'images/suv.glb',
-        //     iconSize: [32, 64],
-        //     name: "SUV Location",
-        //     label: "SUV",
-        //     iconScale: .0000000000001,
-        //     color: '#FFFFFF',
-        //     opacity: .25,
-        //     orientation: {
-        //         heading: 90
-        //     }
-        // });
-
-        // #region snippet_cesium_location_view
-        // create Cesium view
-        let cesiumView = new CesiumView({
-            container: 'cesium-container',
+        // Create the Cesium view with the UAV point marker and bounded draping layers
+        const cesiumView = new CesiumView({
+            container: "cesium-container",
             layers: [uavPointMarker, boundedDrapingLayer],
             options: {
                 viewerProps: {
@@ -251,33 +257,24 @@ const App = () => {
             }
         });
 
-        let baseLayerPicker = cesiumView.viewer.baseLayerPicker;
+        // Set the imagery and terrain providers
+        const baseLayerPicker = cesiumView.viewer.baseLayerPicker;
 
-        let imageryProviders = baseLayerPicker.viewModel.imageryProviderViewModels;
-
+        const imageryProviders = baseLayerPicker.viewModel.imageryProviderViewModels;
         baseLayerPicker.viewModel.selectedImagery =
             imageryProviders.find((imageProviders: any) => imageProviders.name === "Bing Maps Aerial");
 
-        let terrainProviders = baseLayerPicker.viewModel.terrainProviderViewModels;
-
+        const terrainProviders = baseLayerPicker.viewModel.terrainProviderViewModels;
         baseLayerPicker.viewModel.selectedTerrain =
             terrainProviders.find((terrainProviders: any) => terrainProviders.name === "Cesium World Terrain");
 
-        let viewer = cesiumView.viewer;
-
-        viewer.camera.flyTo({
+        // Center the camera on the UAV
+        cesiumView.viewer.camera.flyTo({
             destination: Cartesian3.fromDegrees(-86.67128902952935, 34.70690480206765, 10000)
         });
 
-        // start streaming
-        let masterTimeController = new DataSynchronizer({
-            replaySpeed: 1,
-            intervalRate: 5,
-            dataSources: dataSources
-        });
-
-        masterTimeController.connect().then();
-
+        // Start streaming
+        masterTimeController.connect();
     }, [])
 
     return (
@@ -292,5 +289,3 @@ const App = () => {
         </div>
     );
 };
-
-export default App;
