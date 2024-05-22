@@ -216,12 +216,14 @@ export default function App() {
         dataSources: dataSources
     }), [dataSources]);
 
+    // Set the marker ID and description for the UAV point marker
     useEffect(() => {
-        // Set the marker ID and description for the UAV point marker
         uavPointMarker.props.markerId = "UAV UAS";
         uavPointMarker.props.description = "UAV UAS";
+    }, [uavPointMarker])
 
-        // Create the video view with the UAV video data layer
+    // Create the video view with the UAV video data layer
+    useEffect(() => {
         const videoView = new VideoView({
             container: "video-window",
             css: 'video-h264',
@@ -231,8 +233,10 @@ export default function App() {
             showStats: false,
             layers: [videoDataLayer]
         });
+    }, [])
 
-        // Create the Cesium view with the UAV point marker and bounded draping layers
+    // Create the Cesium view with the UAV point marker and bounded draping layers
+    useEffect(() => {
         const cesiumView = new CesiumView({
             container: "cesium-container",
             layers: [uavPointMarker, boundedDrapingLayer],
@@ -272,8 +276,9 @@ export default function App() {
         cesiumView.viewer.camera.flyTo({
             destination: Cartesian3.fromDegrees(-86.67128902952935, 34.70690480206765, 10000)
         });
+    }, [])
 
-        // Start streaming
+    // Start streaming
         masterTimeController.connect();
     }, [])
 
