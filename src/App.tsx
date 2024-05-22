@@ -12,31 +12,17 @@
  * source code for files added in the larger work.
  *
  */
-import React, { useEffect, useMemo, useRef } from "react";
 
-// @ts-ignore
-import {
-    Cartesian3,
-    Ion,
-    SceneMode,
-    Terrain,
-} from "@cesium/engine";
+import React, { useEffect, useMemo, useRef } from "react";
+import { Cartesian3, Ion, SceneMode, Terrain, } from "@cesium/engine";
 import "@cesium/engine/Source/Widget/CesiumWidget.css";
-// @ts-ignore
 import CesiumView from "osh-js/source/core/ui/view/map/CesiumView.js";
-// @ts-ignore
 import DataSynchronizer from 'osh-js/source/core/timesync/DataSynchronizer';
-// @ts-ignore
 import { Mode } from "osh-js/source/core/datasource/Mode";
-// @ts-ignore
 import PointMarkerLayer from "osh-js/source/core/ui/layer/PointMarkerLayer";
-// @ts-ignore
 import PolygonLayer from "osh-js/source/core/ui/layer/PolygonLayer";
-// @ts-ignore
 import SweApi from "osh-js/source/core/datasource/sweapi/SweApi.datasource";
-// @ts-ignore
 import VideoDataLayer from "osh-js/source/core/ui/layer/VideoDataLayer";
-// @ts-ignore
 import VideoView from "osh-js/source/core/ui/view/video/VideoView";
 
 export default function App() {
