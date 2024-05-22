@@ -53,6 +53,9 @@ export default function App() {
     const videoDsId = "h225hesual08g";
     const fovDsId = "iabpf1ivua1qm";
 
+    const cesiumContainer = useRef(null);
+    const videoContainer = useRef(null);
+
     //#region Data Sources
     /**
      * UAV Location data source
@@ -225,7 +228,7 @@ export default function App() {
     // Create the video view with the UAV video data layer
     useEffect(() => {
         const videoView = new VideoView({
-            container: "video-window",
+            container: videoContainer.current.id,
             css: 'video-h264',
             name: "UAV Video",
             framerate: 25,
@@ -238,7 +241,7 @@ export default function App() {
     // Create the Cesium view with the UAV point marker and bounded draping layers
     useEffect(() => {
         const cesiumView = new CesiumView({
-            container: "cesium-container",
+            container: cesiumContainer.current.id,
             layers: [uavPointMarker, boundedDrapingLayer],
             options: {
                 viewerProps: {
@@ -279,17 +282,18 @@ export default function App() {
     }, [])
 
     // Start streaming
+    useEffect(() => {
         masterTimeController.connect();
     }, [])
 
     return (
         <div id="container">
             <div id="left">
-                <div id="cesium-container"></div>
+                <div id="cesium-container" ref={cesiumContainer}></div>
             </div>
             <div id="right">
                 <div className="title">UAV Video Stream</div>
-                <div id="video-window"></div>
+                <div id="video-window" ref={videoContainer}></div>
             </div>
         </div>
     );
